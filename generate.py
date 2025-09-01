@@ -7,8 +7,10 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 input_path = os.path.join(script_dir, "input.cnf")
 output_path = os.path.join(script_dir, "output.txt")
+proof_path = os.path.join(script_dir, "proof.txt")
 clauses_path = os.path.join(script_dir, "xor_clauses.cnf")
 kissat_path = os.path.join(parent_dir, "kissat-rel-4.0.2", "build", "kissat") # Before testing: Update this to your sat solver's location 
+#drat_path = os.path.join(parent_dir, "drat-trim-master", "drat-trim") 
 
 start_time = time.time()
 dimacs_elapsed = 0
@@ -18,10 +20,10 @@ verify_elapsed = 0
 addOrthogonalClauses = True # Creates naive orthogonality clauses, TODO: update to use other encoding (auxiliary matrix) 
 addSymmetryBreakingClauses = True # Creates symmetry breaking clauses
 addRelationConstraints = True # Creates relation constraints, requires symmetry breaking to be on for the full usage of relations
-addXORClauses = True # Imports the clauses required to check the existence of a dependence relation in 4-net(6)'s first two rows, columns, first latin square symbols, and second latin square symbols 
+addXORClauses = False # Imports the clauses required to check the existence of a dependence relation in 4-net(6)'s first two rows, columns, first latin square symbols, and second latin square symbols 
 
-relation_type = [2,2,2,2]
-n = 6
+relation_type = [4,4,4,4]
+n = 10
 seed = None
 if len(sys.argv) >= 2:
 	seed = int(sys.argv[1]) # Any integer?
@@ -123,14 +125,16 @@ if addRelationConstraints: # Build the relation set(s) based on single relation 
 # Delisle symmetry breaking
 if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 	## Proposition 3: In A, Encode [1,0] <= [0,1]. 
-	for s2 in range(n): # Disallow [0,1]=s2 when [1,0]=s1 with s1 > s2 
-		for s1 in range(s2+1,n): # s1 > s2
+	for s1 in range(n): # Disallow [0,1]=s2 when [1,0]=s1 with s1 > s2 
+		for s2 in range(s1): # s1 > s2
 			clauses.append("-" + str(get1DIndex(0, 1, 0, s1)) + " -" + str(get1DIndex(0, 0, 1, s2)))
-	for s in range(n): # Second square: if same s symbol, A[1,0] == A[0,1], force B[1,0] = t1 < B[0,1] = t2
-		for t2 in range(n):
-			for t1 in range(t2, n):
-				clauses.append("-" + str(get1DIndex(0, 1, 0, s)) + " -" + str(get1DIndex(0, 0, 1, s)) + " -" + str(get1DIndex(1, 1, 0, t1)) + " -" + str(get1DIndex(1, 0, 1, t2)))    
-	
+	for t1 in range(n): # Second square: if same s symbol, A[1,0] == A[0,1], force B[1,0] = t1 < B[0,1] = t2
+		for t2 in range(t1 + 1):
+			if t2 == 4:
+				continue
+			for m in range(n):
+				clauses.append("-" + str(get1DIndex(0, 1, 0, m)) + " -" + str(get1DIndex(0, 0, 1, m)) + " -" + str(get1DIndex(1, 1, 0, t1)) + " -" + str(get1DIndex(1, 0, 1, t2)))    
+
 	## Proposition 4: A < B, in practice it was sufficient to only consider weaker constraint of only checking (0,0), (0,1), (0,2)
 	for s1 in range(n): # A[0,0] <= B[0,0]
 		for s2 in range(s1): # s1 > s2
@@ -147,19 +151,19 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 
 	if addRelationConstraints: # symmetry breaking based off relations
 		rows_in_R = [i for i in range(n) if i in R]
-		rows_out_R = [i for i in range(n) if i not in R]
-		cols_in_R = [j for j in range(n) if (n + j) in R]
+		rows_out_R= [i for i in range(n) if i not in R]
+		cols_in_R  = [j for j in range(n) if (n + j) in R]
 		cols_out_R = [j for j in range(n) if (n + j) not in R]
 		A_in_R = [s for s in range(n) if (2*n + s) in R]
-		A_out_R = [s for s in range(n) if (2*n + s) not in R]
-		B_in_R = [t for t in range(n) if (3*n + t) in R]
+		A_out_R= [s for s in range(n) if (2*n + s) not in R]
+		B_in_R  = [t for t in range(n) if (3*n + t) in R]
 		B_out_R = [t for t in range(n) if (3*n + t) not in R]
 
 		## Proposition 5: First column of A sorted within row equivalence classes
 		row_classes = []
-		if len(rows_in_R) > 0:
+		if len(rows_in_R) > 1:
 			row_classes.append(rows_in_R)
-		if len(rows_out_R) > 0:
+		if len(rows_out_R) > 1:
 			row_classes.append(rows_out_R)
 		
 		# Sort within each equivalence class
@@ -170,16 +174,12 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 				for s in range(n): # A[i,0] <= A[i_next,0]
 					for t in range(s):
 						clauses.append("-" + str(get1DIndex(0, i, 0, s)) + " -" + str(get1DIndex(0, i_next, 0, t)))
-				for x in range(n): # tie break with B
-					for s in range(n):
-						for t in range(s):
-							clauses.append("-" + str(get1DIndex(0, i, 0, x)) + " -" + str(get1DIndex(0, i_next, 0, x)) + " -" + str(get1DIndex(1, i, 0, s)) + " -" + str(get1DIndex(1, i_next, 0, t)))
 	
 		## Proposition 6: First row of A sorted within column equivalence classes
 		col_classes = []
-		if len(cols_in_R) > 0:
+		if len(cols_in_R) > 1:
 			col_classes.append(cols_in_R)
-		if len(cols_out_R) > 0:
+		if len(cols_out_R) > 1:
 			col_classes.append(cols_out_R)
 		
 		# Sort within each equivalence class
@@ -187,16 +187,18 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 			for idx in range(len(col_class) - 1):
 				j = col_class[idx]
 				j_next = col_class[idx + 1]
-				for s1 in range(n): # A[0,j] <= A[0,j_next]
-					for s2 in range(s1):
-						clauses.append("-" + str(get1DIndex(0, 0, j, s1)) + " -" + str(get1DIndex(0, 0, j_next, s2)))
-				for x in range(n): # tie break with B
-					for s in range(n):
-						for t in range(s):
-							clauses.append("-" + str(get1DIndex(0, 0, j, x)) + " -" + str(get1DIndex(0, 0, j_next, x)) + " -" + str(get1DIndex(1, 0, j, s)) + " -" + str(get1DIndex(1, 0, j_next, t)))
-
+				for s in range(n): # A[0,j] <= A[0,j_next]
+					for t in range(s):
+						clauses.append("-" + str(get1DIndex(0, 0, j, s)) + " -" + str(get1DIndex(0, 0, j_next, t)))
+	
 		## Proposition 7: Symbols in same A-symbol equivalence class sorted in first column
-		for sym_class in [A_in_R, A_out_R]:
+		A_sym_classes = []
+		if len(A_in_R) > 1:
+			A_sym_classes.append(A_in_R)
+		if len(A_out_R) > 1:
+			A_sym_classes.append(A_out_R)
+
+		for sym_class in A_sym_classes:
 			for idx in range(len(sym_class) - 1):
 				s = sym_class[idx]
 				s_next = sym_class[idx + 1]
@@ -204,9 +206,15 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 				for i in range(n): # A[0,i] <= A[0,j]
 					for j in range(i):
 						clauses.append("-" + str(get1DIndex(0, 0, i, s)) + " -" + str(get1DIndex(0, 0, j, s_next)))
-	
+		
 		## Proposition 8: Symbols in same B-symbol equivalence class sorted in first column
-		for sym_class in [B_in_R, B_out_R]:
+		B_sym_classes = []
+		if len(B_in_R) > 1:
+			B_sym_classes.append(B_in_R)
+		if len(B_out_R) > 1:
+			B_sym_classes.append(B_out_R)
+		# proposition 8 conflicts with propositions (5, 6) and (3 tie breaking), causing the entire encoding to always unsat with n=10 and relation type [4,4,4,4], unless I remove 8, 3, or (5, 6) proposition(s)
+		for sym_class in B_sym_classes: 
 			for idx in range(len(sym_class) - 1):
 				t = sym_class[idx]
 				t_next = sym_class[idx + 1]
@@ -240,10 +248,11 @@ print("Wrote DIMACS CNF file to:", input_path)
 	
 kissat_time = time.time() # wall time
 with open(output_path, "w") as out_file:
-	commands = [kissat_path, input_path]
+	commands = [kissat_path, input_path, proof_path]
 	if seed != None: 
 		commands.insert(1, "--seed=" + str(seed))
 	subprocess.run(commands, stdout=out_file, stderr=subprocess.STDOUT)
+	#subprocess.run([drat_path, input_path, proof_path], stdout=out_file, stderr=subprocess.STDOUT)
 kissat_elapsed = round((time.time() - kissat_time) * 100)/100
 
 verify_time = time.time()
