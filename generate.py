@@ -216,7 +216,7 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 			B_sym_classes.append(B_in_R)
 		if len(B_out_R) > 1:
 			B_sym_classes.append(B_out_R)
-		# proposition 8 conflicts with propositions (5, 6) and (4), causing the entire encoding to unsat unless i remove a pair of propositions
+			
 		for sym_class in B_sym_classes: 
 			for idx in range(len(sym_class) - 1):
 				t = sym_class[idx]
@@ -318,3 +318,4 @@ print("     Kissat elapsed time:", kissat_elapsed, "seconds")
 print("     Verification elapsed time:", verify_elapsed, "seconds")
 
 # cd /mnt/g/Code/sat\ solver\ stuff/stinson\ xor
+
