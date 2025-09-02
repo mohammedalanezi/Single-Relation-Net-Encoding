@@ -130,8 +130,6 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 			clauses.append("-" + str(get1DIndex(0, 1, 0, s1)) + " -" + str(get1DIndex(0, 0, 1, s2)))
 	for t1 in range(n): # Second square: if same s symbol, A[1,0] == A[0,1], force B[1,0] = t1 < B[0,1] = t2
 		for t2 in range(t1 + 1):
-			if t2 == 4:
-				continue
 			for m in range(n):
 				clauses.append("-" + str(get1DIndex(0, 1, 0, m)) + " -" + str(get1DIndex(0, 0, 1, m)) + " -" + str(get1DIndex(1, 1, 0, t1)) + " -" + str(get1DIndex(1, 0, 1, t2)))    
 
@@ -314,3 +312,4 @@ print("     Kissat elapsed time:", kissat_elapsed, "seconds")
 print("     Verification elapsed time:", verify_elapsed, "seconds")
 
 # cd /mnt/g/Code/sat\ solver\ stuff/stinson\ xor
+
