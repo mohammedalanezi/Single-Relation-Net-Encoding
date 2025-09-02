@@ -124,6 +124,7 @@ if addRelationConstraints: # Build the relation set(s) based on single relation 
 
 # Delisle symmetry breaking
 if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
+	clauses.append("c Proposition 3")
 	## Proposition 3: In A, Encode [1,0] <= [0,1]. 
 	for s1 in range(n): # Disallow [0,1]=s2 when [1,0]=s1 with s1 > s2 
 		for s2 in range(s1): # s1 > s2
@@ -132,20 +133,20 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 		for t2 in range(t1 + 1):
 			for m in range(n):
 				clauses.append("-" + str(get1DIndex(0, 1, 0, m)) + " -" + str(get1DIndex(0, 0, 1, m)) + " -" + str(get1DIndex(1, 1, 0, t1)) + " -" + str(get1DIndex(1, 0, 1, t2)))    
-
+	clauses.append("c Proposition 4")
 	## Proposition 4: A < B, in practice it was sufficient to only consider weaker constraint of only checking (0,0), (0,1), (0,2)
 	for s1 in range(n): # A[0,0] <= B[0,0]
 		for s2 in range(s1): # s1 > s2
 			clauses.append("-" + str(get1DIndex(0, 0, 0, s1)) + " -" + str(get1DIndex(1, 0, 0, s2)))
-	for s in range(n):  # A[0,0] == B[0,0], then A[0,1] <= B[0,1]
+	for s in range(n):  # A[0,0] == B[0,0], then A[1,0] <= B[1,0]
 		for t1 in range(n):
 			for t2 in range(t1): # t1 > t2
-				clauses.append("-" + str(get1DIndex(0, 0, 0, s)) + " -" + str(get1DIndex(1, 0, 0, s)) + " -" + str(get1DIndex(0, 0, 1, t1)) + " -" + str(get1DIndex(1, 0, 1, t2)))    
-	for s in range(n):  # A[0,0] == B[0,0] and A[0,1] == B[0,1], then A[0,2] <= B[0,2]
+				clauses.append("-" + str(get1DIndex(0, 0, 0, s)) + " -" + str(get1DIndex(1, 0, 0, s)) + " -" + str(get1DIndex(0, 1, 0, t1)) + " -" + str(get1DIndex(1, 1, 0, t2)))    
+	for s in range(n):  # A[0,0] == B[0,0] and A[1,0] == B[1,0], then A[2,0] <= B[2,0]
 		for t in range(n):
 			for r1 in range(n):
 				for r2 in range(r1): # r1 > r2
-					clauses.append("-" + str(get1DIndex(0, 0, 0, s)) + " -" + str(get1DIndex(1, 0, 0, s)) + " -" + str(get1DIndex(0, 0, 1, t)) + " -" + str(get1DIndex(1, 0, 1, t)) + " -" + str(get1DIndex(0, 0, 2, r1)) + " -" + str(get1DIndex(1, 0, 2, r2)))    
+					clauses.append("-" + str(get1DIndex(0, 0, 0, s)) + " -" + str(get1DIndex(1, 0, 0, s)) + " -" + str(get1DIndex(0, 1, 0, t)) + " -" + str(get1DIndex(1, 1, 0, t)) + " -" + str(get1DIndex(0, 2, 0, r1)) + " -" + str(get1DIndex(1, 2, 0, r2)))    
 
 	if addRelationConstraints: # symmetry breaking based off relations
 		rows_in_R = [i for i in range(n) if i in R]
@@ -157,6 +158,7 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 		B_in_R  = [t for t in range(n) if (3*n + t) in R]
 		B_out_R = [t for t in range(n) if (3*n + t) not in R]
 
+		clauses.append("c Proposition 5")
 		## Proposition 5: First column of A sorted within row equivalence classes
 		row_classes = []
 		if len(rows_in_R) > 1:
@@ -173,6 +175,7 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 					for t in range(s):
 						clauses.append("-" + str(get1DIndex(0, i, 0, s)) + " -" + str(get1DIndex(0, i_next, 0, t)))
 	
+		clauses.append("c Proposition 6")
 		## Proposition 6: First row of A sorted within column equivalence classes
 		col_classes = []
 		if len(cols_in_R) > 1:
@@ -189,6 +192,7 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 					for t in range(s):
 						clauses.append("-" + str(get1DIndex(0, 0, j, s)) + " -" + str(get1DIndex(0, 0, j_next, t)))
 	
+		clauses.append("c Proposition 7")
 		## Proposition 7: Symbols in same A-symbol equivalence class sorted in first column
 		A_sym_classes = []
 		if len(A_in_R) > 1:
@@ -203,15 +207,16 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 				# If A[0,i] = s, then A[0,i'] != s_next for all i' < i
 				for i in range(n): # A[0,i] <= A[0,j]
 					for j in range(i):
-						clauses.append("-" + str(get1DIndex(0, 0, i, s)) + " -" + str(get1DIndex(0, 0, j, s_next)))
+						clauses.append("-" + str(get1DIndex(0, i, 0, s)) + " -" + str(get1DIndex(0, j, 0, s_next)))
 		
+		clauses.append("c Proposition 8")
 		## Proposition 8: Symbols in same B-symbol equivalence class sorted in first column
 		B_sym_classes = []
 		if len(B_in_R) > 1:
 			B_sym_classes.append(B_in_R)
 		if len(B_out_R) > 1:
 			B_sym_classes.append(B_out_R)
-		# proposition 8 conflicts with propositions (5, 6) and (3 tie breaking), causing the entire encoding to always unsat with n=10 and relation type [4,4,4,4], unless I remove 8, 3, or (5, 6) proposition(s)
+		# proposition 8 conflicts with propositions (5, 6) and (4), causing the entire encoding to unsat unless i remove a pair of propositions
 		for sym_class in B_sym_classes: 
 			for idx in range(len(sym_class) - 1):
 				t = sym_class[idx]
@@ -219,9 +224,10 @@ if addSymmetryBreakingClauses: # A = 1st latin square, B = 2nd latin square
 				# If B[0,i] = t, then B[0,i'] != t_next for all i' < i
 				for i in range(n): # B[0,i] <= B[0,j]
 					for j in range(i):
-						clauses.append("-" + str(get1DIndex(1, 0, i, t)) + " -" + str(get1DIndex(1, 0, j, t_next)))
+						clauses.append("-" + str(get1DIndex(1, i, 0, t)) + " -" + str(get1DIndex(1, j, 0, t_next)))
 
 if addOrthogonalClauses: # n^4 * (n^2 - 1) / 2 clauses; TODO: replace with myrvold auxiliary matrix
+	clauses.append("c Orthogonality")
 	for r1 in range(n): # Maintain orthogonality clauses
 		for c1 in range(n):
 			for r2 in range(r1, n): # Starting at r1 and c2 is to prevent duplicate iterations over the same positions
@@ -234,7 +240,7 @@ if addOrthogonalClauses: # n^4 * (n^2 - 1) / 2 clauses; TODO: replace with myrvo
 							clauses.append("-" + str(get1DIndex(0, r1, c1, s1)) + " -" + str(get1DIndex(1, r1, c1, s2)) + " -" + str(get1DIndex(0, r2, c2, s1)) + " -" + str(get1DIndex(1, r2, c2, s2)))
 
 variableCount = largestVariable # get1DIndex(1, n - 1, n - 1, n - 1
-clauseCount = len(clauses)
+clauseCount = len(clauses) - 7
 
 with open(input_path, "w") as f:
 	f.write(f"p cnf {variableCount} {clauseCount}\n")
@@ -312,4 +318,3 @@ print("     Kissat elapsed time:", kissat_elapsed, "seconds")
 print("     Verification elapsed time:", verify_elapsed, "seconds")
 
 # cd /mnt/g/Code/sat\ solver\ stuff/stinson\ xor
-
